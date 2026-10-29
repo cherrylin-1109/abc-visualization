@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>ABC｜Onlooker Bee 最小化視覺化</title>
+<style>
+:root{--bg:#0c0e14;--panel:#17191e;--line:#3a3e49;--yellow:#ffc524;--text:#f8f8fb;--muted:#afb3bf;--blue:#62bbff;--green:#62d4aa;--pink:#ff8c9d}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,'Microsoft JhengHei',sans-serif;background:var(--bg);color:var(--text)}
+main{max-width:1600px;margin:0 auto;padding:24px 32px 28px}h1{font-size:clamp(32px,3vw,48px);text-align:center;margin:0 0 8px;letter-spacing:.02em}h1 em{font-style:normal;color:var(--yellow)}.subtitle{text-align:center;color:var(--muted);font-size:clamp(18px,1.5vw,23px);margin:0 0 22px}.grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(350px,.86fr);gap:22px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:20px;min-width:0}.panel h2{font-size:clamp(23px,2vw,30px);margin:0 0 12px;color:var(--yellow)}.lead{font-size:clamp(18px,1.55vw,24px);line-height:1.5;margin:0 0 12px}.plot{display:block;width:100%;height:auto;border-radius:12px;background:#0e121b;border:1px solid #343947;touch-action:none;cursor:crosshair}.tagrow{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:14px 0}.legend{font-size:19px;color:#d6d9e4}.legend b{color:var(--yellow)}.pill{border-radius:999px;border:1px solid #52596a;padding:7px 13px;font-weight:700;font-size:18px}.controls{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:14px}button{padding:13px 18px;background:var(--yellow);border:0;border-radius:12px;color:#111;font-size:20px;font-weight:800;cursor:pointer}button.secondary{background:#313743;color:#fff;border:1px solid #545c6b}button:hover{filter:brightness(1.08)}.formula{padding:14px;text-align:center;background:#22242b;border-radius:14px;font-size:clamp(23px,2vw,33px);margin-bottom:14px}.formula strong{color:var(--yellow)}.source{display:grid;grid-template-columns:30px 1fr 105px;align-items:center;gap:12px;margin:13px 0;font-size:23px}.sourcelabel{font-size:24px;font-weight:800}.barouter{height:29px;border-radius:999px;background:#2b303c;overflow:hidden}.bar{height:100%;border-radius:999px;transition:width .2s}.source em{font-style:normal;text-align:right;font-variant-numeric:tabular-nums;font-weight:800}.result{padding:12px 15px;border-radius:12px;background:#262a33;font-size:22px;line-height:1.55;margin-top:12px}.result strong{color:var(--yellow)}.table{width:100%;border-collapse:collapse;font-size:20px;margin-top:11px}th,td{padding:11px 9px;border-bottom:1px solid #3c424e;text-align:center;font-variant-numeric:tabular-nums}th{color:var(--yellow);font-size:18px}td:first-child{font-weight:800}.status{font-size:22px;line-height:1.55;min-height:65px;margin-top:12px}.status b{color:var(--yellow)}.footer{margin-top:17px;color:#a9aebb;font-size:17px;line-height:1.55;text-align:center}.flower{color:var(--yellow)}
+@media(max-width:1000px){main{padding:18px}.grid{grid-template-columns:1fr}.source{grid-template-columns:30px 1fr 90px}.panel{padding:15px}}@media(min-width:1450px){.grid{grid-template-columns:1.34fr .88fr}}
+</style></head><body><main>
+<h1>Onlooker Bee 如何選擇 <em>Food Source</em>？</h1><div class="subtitle">最小化問題：函數值越小 → Fitness 越大 → 被選中的機率越高</div>
+<div class="grid"><section class="panel"><h2>① 在最小化曲線上移動 Food Sources</h2><p class="lead">拖曳 A、B、C 三個點，觀察它們在 <b>f(x) = x²</b> 曲線上的高低變化。</p>
+<canvas id="plot" class="plot" width="930" height="610" aria-label="可拖曳三個食物來源的拋物線圖"></canvas>
+<div class="tagrow"><span class="legend">🟦 A　🟩 B　🩷 C</span><span class="pill">目標：找最小函數值</span></div>
+<div class="controls"><button id="reset" class="secondary">還原範例</button><button id="random" class="secondary">隨機放置三個點</button></div>
+</section><section class="panel"><h2>② Fitness 與選擇機率</h2><div class="formula"><div>fit<sub>i</sub> = <strong>1 / (1 + f<sub>i</sub>)</strong></div><div>p<sub>i</sub> = <strong>fit<sub>i</sub> / Σfit<sub>n</sub></strong></div></div>
+<table class="table"><thead><tr><th>來源</th><th>函數值 f</th><th>Fitness</th><th>機率</th></tr></thead><tbody id="rows"></tbody></table>
+<h2 style="margin-top:20px">③ 觀察蜂實際抽選</h2><div id="bars"></div>
+<div class="controls"><button id="pick">🐝 選擇一次</button><button id="pick10" class="secondary">連續選擇 10 次</button><button id="clear" class="secondary">清除次數</button></div>
+<div class="status" id="status">點擊「選擇一次」，看看觀察蜂會選中哪個來源。</div>
+<div class="result" id="summary"></div>
+</section></div>
+<div class="footer">互動教學示例：f(x) = x²，Fitness 採常見非負目標值轉換。此圖解釋 ABC 選擇機率概念，並非論文實驗軌跡。</div>
+</main><script>
+(()=>{
+const canvas=document.getElementById('plot'),ctx=canvas.getContext('2d');
+const names=['A','B','C'],colors=['#62bbff','#62d4aa','#ff8c9d'];
+let points=[1,2,3], counts=[0,0,0],chosen=-1,drag=-1;
+const xmin=-4,xmax=4,fmax=16,L=76,R=865,T=42,B=530;
+const X=x=>L+(x-xmin)/(xmax-xmin)*(R-L),Y=v=>B-(v/fmax)*(B-T);
+const invX=px=>Math.max(xmin,Math.min(xmax,xmin+(px-L)/(R-L)*(xmax-xmin)));
+const fmt=v=>v.toFixed(2);
+function compute(){const fs=points.map(x=>x*x),fits=fs.map(f=>1/(1+f)),sum=fits.reduce((a,b)=>a+b,0);return {fs,fits,probs:fits.map(a=>a/sum)}}
+function redraw(){
+ const {fs,fits,probs}=compute();ctx.clearRect(0,0,930,610);ctx.fillStyle='#0e121b';ctx.fillRect(0,0,930,610);
+ for(let x=-4;x<=4;x++){const xx=X(x);ctx.strokeStyle=x===0?'#7a8498':'#31394a';ctx.lineWidth=x===0?2:1;ctx.beginPath();ctx.moveTo(xx,T);ctx.lineTo(xx,B);ctx.stroke();ctx.fillStyle='#d2d7e4';ctx.font='21px Arial';ctx.textAlign='center';ctx.fillText(x,xx,B+36)}
+ for(let f=0;f<=16;f+=4){let yy=Y(f);ctx.strokeStyle=f===0?'#7a8498':'#31394a';ctx.lineWidth=f===0?2:1;ctx.beginPath();ctx.moveTo(L,yy);ctx.lineTo(R,yy);ctx.stroke();ctx.fillStyle='#d2d7e4';ctx.font='20px Arial';ctx.textAlign='right';ctx.fillText(f,L-18,yy+6)}
+ ctx.textAlign='left';ctx.fillStyle='#e7ebf4';ctx.font='bold 23px Arial';ctx.fillText('f(x)',17,32);ctx.fillText('x',875,563);
+ ctx.strokeStyle='#ffd24d';ctx.lineWidth=5;ctx.beginPath();for(let i=0;i<=500;i++){const x=xmin+(xmax-xmin)*i/500;if(i===0)ctx.moveTo(X(x),Y(x*x));else ctx.lineTo(X(x),Y(x*x))}ctx.stroke();
+ ctx.beginPath();ctx.arc(X(0),Y(0),8,0,2*Math.PI);ctx.fillStyle='#ffd24d';ctx.fill();ctx.font='bold 21px Arial';ctx.fillText('最小值 f(0)=0',X(0)+15,Y(0)-14);
+ points.forEach((x,i)=>{const px=X(x),py=Y(fs[i]);ctx.setLineDash([7,7]);ctx.strokeStyle=colors[i];ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(px,B);ctx.lineTo(px,py);ctx.stroke();ctx.setLineDash([]);ctx.beginPath();ctx.arc(px,py,chosen===i?19:15,0,2*Math.PI);ctx.fillStyle=colors[i];ctx.fill();ctx.lineWidth=3;ctx.strokeStyle='#10131a';ctx.stroke();ctx.fillStyle=colors[i];ctx.font='bold 29px Arial';ctx.textAlign='left';ctx.fillText(names[i]+': '+fmt(fs[i]),Math.max(L+5,Math.min(R-120,px+21)),Math.max(T+30,py-22-i*14));});
+ document.getElementById('rows').innerHTML=names.map((n,i)=>`<tr><td style="color:${colors[i]}">${n}</td><td>${fmt(fs[i])}</td><td>${fits[i].toFixed(3)}</td><td>${(probs[i]*100).toFixed(1)}%</td></tr>`).join('');
+ document.getElementById('bars').innerHTML=names.map((n,i)=>`<div class="source"><span class="sourcelabel" style="color:${colors[i]}">${n}</span><div class="barouter"><div class="bar" style="background:${colors[i]};width:${(probs[i]*100).toFixed(2)}%"></div></div><em>${(probs[i]*100).toFixed(1)}%</em></div>`).join('');
+ let best=fs.indexOf(Math.min(...fs)),worst=fs.indexOf(Math.max(...fs));document.getElementById('summary').innerHTML=`最佳來源：<strong>${names[best]}</strong>（f = ${fmt(fs[best])}）<br>最差來源：<strong>${names[worst]}</strong>（f = ${fmt(fs[worst])}）仍有 <strong>${(probs[worst]*100).toFixed(1)}%</strong> 的選擇機率。`;
+}
+function pos(e){let r=canvas.getBoundingClientRect();return {x:(e.clientX-r.left)*930/r.width,y:(e.clientY-r.top)*610/r.height}}
+canvas.addEventListener('pointerdown',e=>{const p=pos(e);let distances=points.map(x=>Math.hypot(X(x)-p.x,Y(x*x)-p.y));let mind=Math.min(...distances);if(mind<55){drag=distances.indexOf(mind);canvas.setPointerCapture(e.pointerId)}});
+canvas.addEventListener('pointermove',e=>{if(drag<0)return;points[drag]=Math.round(invX(pos(e).x)*100)/100;chosen=-1;redraw()});
+canvas.addEventListener('pointerup',()=>drag=-1);canvas.addEventListener('pointercancel',()=>drag=-1);
+function pick(times){let {probs}=compute();for(let n=0;n<times;n++){let r=Math.random(),c=0;for(let i=0;i<3;i++){c+=probs[i];if(r<=c||i===2){chosen=i;counts[i]++;break}}}const total=counts.reduce((a,b)=>a+b,0);document.getElementById('status').innerHTML=`本次選中 <b>${names[chosen]}</b>！ 累計 ${total} 次：A ${counts[0]} 次／B ${counts[1]} 次／C ${counts[2]} 次。`;redraw()}
+function resetCounts(){counts=[0,0,0];chosen=-1;document.getElementById('status').textContent='已清除抽選次數，可重新抽選。';redraw()}
+document.getElementById('reset').addEventListener('click',()=>{points=[1,2,3];resetCounts()});
+document.getElementById('random').addEventListener('click',()=>{points=Array.from({length:3},()=>Math.round((Math.random()*7-3.5)*100)/100);resetCounts()});
+document.getElementById('pick').addEventListener('click',()=>pick(1));document.getElementById('pick10').addEventListener('click',()=>pick(10));document.getElementById('clear').addEventListener('click',resetCounts);
+redraw();
+})();
+</script></body></html>
