@@ -1,0 +1,226 @@
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ABC｜五種 Benchmark Functions 互動地形</title><style>
+:root{--bg:#090d15;--panel:#171b26;--line:#3c4251;--gold:#ffc61a;--fg:#f3f4f8;--muted:#cbd1dc}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,'Microsoft JhengHei',sans-serif}header{padding:16px 26px;border-bottom:2px solid #725a10;display:flex;align-items:center;gap:24px;flex-wrap:wrap}h1{font-size:clamp(27px,2.8vw,42px);margin:0;color:var(--gold)}.hint{color:var(--muted);font-size:18px}.wrap{padding:18px 24px;max-width:1900px;margin:auto}.bar{display:flex;align-items:center;gap:11px;flex-wrap:wrap;margin-bottom:18px}.choice{padding:13px 18px;border:1px solid #7b661a;border-radius:12px;background:#20222b;color:#fff;cursor:pointer;font-size:21px;font-weight:700}.choice.active{background:var(--gold);color:#16181e}.split{display:grid;grid-template-columns:minmax(480px,1.45fr) minmax(340px,.8fr);gap:18px}.panel{border:1px solid var(--line);background:var(--panel);padding:18px;border-radius:18px}h2{font-size:29px;color:var(--gold);margin:0 0 12px}canvas{width:100%;height:auto;display:block;border-radius:12px;background:#0e1627}.stats{display:grid;grid-template-columns:1fr 1fr;gap:12px}.stat{padding:13px;background:#242a39;border-radius:11px}.stat small{display:block;font-size:18px;color:#d5dbec}.stat strong{display:block;font-size:28px;color:#fff;margin-top:5px}.desc{font-size:23px;line-height:1.55;min-height:90px}.control{font-size:21px;display:flex;gap:13px;align-items:center;flex-wrap:wrap;margin:14px 0}input[type=range]{flex:1;min-width:130px;accent-color:var(--gold)}select{padding:10px;background:#242a39;color:#fff;border:1px solid #687084;border-radius:10px;font-size:22px}.value{font-size:22px;min-width:70px;font-variant-numeric:tabular-nums}.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}.legend{font-size:19px;color:#dde4f1;line-height:1.6}.footer{font-size:18px;color:#bfc6d4;margin-top:12px}.toggle{font-size:19px;color:#fff;background:#28334b;border:1px solid #66748e;padding:10px 14px;border-radius:10px;cursor:pointer}.badge{font-size:18px;background:#2a2e3c;border-radius:8px;padding:6px 11px}#surface{cursor:grab;touch-action:none}#surface:active{cursor:grabbing}@media(max-width:1100px){.split,.two{grid-template-columns:1fr}}@media(min-width:1500px){.wrap{padding:20px 36px}.panel{padding:24px}}
+</style><style>
+#experiment{margin:24px auto 0;border:1px solid #6d602a;background:#111827;border-radius:18px;padding:22px;max-width:1700px;color:#f5f7fd}
+#experiment h2{font-size:32px;color:#ffcf48;margin:0 0 14px}
+#experiment .exp-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:14px 0}
+#experiment label,#experiment .exp-note{font-size:20px;line-height:1.5}
+#experiment select,#experiment input,#experiment button{font-size:21px;padding:10px 15px;border-radius:10px;background:#26354e;color:#fff;border:1px solid #64738d}
+#experiment button{cursor:pointer}
+#experiment button.primary{background:#f9cb3d;color:#151a27;font-weight:800}
+#experiment button:disabled{opacity:.5;cursor:not-allowed}
+#experiment .exp-grid{display:grid;grid-template-columns:minmax(400px,1.4fr) minmax(360px,1fr);gap:18px}
+#experiment .exp-card{padding:16px;border-radius:14px;background:#1c2639;border:1px solid #39445d}
+#experiment .exp-chart{width:100%;height:auto;background:#0b1323;border:1px solid #3b4b65;border-radius:12px}
+#experiment .exp-metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:16px 0}
+#experiment .exp-metrics div{padding:12px;background:#121c2e;border-radius:12px;font-size:18px}
+#experiment .exp-metrics strong{display:block;font-size:31px;color:#f9cb3d;font-variant-numeric:tabular-nums}
+#experiment table{border-collapse:collapse;width:100%;font-size:20px}
+#experiment th,#experiment td{padding:11px 9px;text-align:left;border-bottom:1px solid #3d4860}
+#experiment th{color:#f9cb3d}
+#experiment .exp-note{color:#ced8e9}
+@media(max-width:1100px){#experiment .exp-grid{grid-template-columns:1fr}}
+</style><style>
+#compareLauncher{background:#f9cd42!important;color:#192236!important;font-weight:900!important;font-size:24px!important;border:2px solid #f9cd42!important}
+#compareOverlay{position:fixed;inset:0;z-index:100000;background:#080e19;overflow:auto;display:none;padding:26px 34px;color:#f4f7ff;font-family:system-ui,"Microsoft JhengHei",sans-serif}
+#compareOverlay.visible{display:block}
+#compareOverlay .cpTop{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;margin-bottom:16px}
+#compareOverlay h2{font-size:40px;color:#f9cd42;margin:0 0 8px}
+#compareOverlay .cpTitleNote{font-size:23px;line-height:1.5;color:#d2ddf0}
+#compareOverlay button{font-size:23px;padding:12px 17px;border-radius:12px;cursor:pointer;background:#263954;color:#fff;border:1px solid #586a88}
+#compareOverlay button.cpActive{background:#f9cd42;color:#1b2436;border-color:#f9cd42;font-weight:850}
+#compareOverlay .cpBtns{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0 20px}
+#compareOverlay .cpGrid{display:grid;grid-template-columns:minmax(620px,1.35fr) minmax(390px,1fr);gap:18px}
+#compareOverlay .cpCard{background:#151f31;border:1px solid #43516b;border-radius:18px;padding:18px}
+#compareOverlay .cpCard h3{font-size:28px;color:#f9cd42;margin:0 0 12px}
+#compareOverlay canvas{width:100%;height:auto;display:block;border-radius:12px;background:#0c1424}
+#compareOverlay table{width:100%;border-collapse:collapse;font-size:23px}
+#compareOverlay td,#compareOverlay th{padding:12px 10px;border-bottom:1px solid #39485e;text-align:right}
+#compareOverlay td:first-child,#compareOverlay th:first-child{text-align:left}
+#compareOverlay th{color:#f9cd42}
+#compareOverlay tr.cpABC2{background:rgba(249,205,66,.12)}
+#compareOverlay #cpInterpret{font-size:23px;line-height:1.65;padding:15px 18px;border-radius:14px;background:#222e45;margin-top:15px}
+#compareOverlay .cpFoot{font-size:19px;color:#cad6eb;line-height:1.5;margin-top:14px}
+@media(max-width:1200px){#compareOverlay .cpGrid{grid-template-columns:1fr}}
+</style></head><body><header><h1>ABC｜五種 Benchmark Functions</h1><span class="hint">五種測試函數｜3D 地形・搜尋過程・結果比較</span></header><main class="wrap"><div class="bar" id="funcBtns"><button class="choice" data-f="griewank">f₁ Griewank</button><button class="choice active" data-f="rastrigin">f₂ Rastrigin</button><button class="choice" data-f="rosenbrock">f₃ Rosenbrock</button><button class="choice" data-f="ackley">f₄ Ackley</button><button class="choice" data-f="schwefel">f₅ Schwefel</button></div><div class="split"><div class="panel"><h2 id="landTitle">Rastrigin｜3D 函數地形</h2><canvas id="surface" width="1120" height="640"></canvas><div class="control"><button class="toggle" id="spin">▶ 自動旋轉</button><button class="toggle" id="resetCam">恢復視角</button><span class="legend">拖曳旋轉視角・滑鼠滾輪縮放</span></div><div class="two"><div><h2>2D 等高熱圖</h2><canvas id="heat" width="550" height="380"></canvas></div><div><h2>探索函數位置</h2><canvas id="profile" width="550" height="380"></canvas></div></div><p class="legend">左圖：2D 等高熱圖，藍綠色較低、橘紅色較高。右圖：固定 x₂，只改變 x₁。黃色點是目前探索位置，綠色環標記已知全域最小位置（可能在視野之外）。</p></div><div class="panel"><h2>這個函數要觀察什麼？</h2><div class="desc" id="explain"></div><div class="stats"><div class="stat"><small>理論全域最小值（固定）</small><strong id="minVal">0</strong></div><div class="stat"><small>論文初始範圍（每維）</small><strong id="bounds">[-15,15]</strong></div><div class="stat"><small>目前位置的 f(x)（即時）</small><strong id="nowVal">—</strong></div><div class="stat"><small>理論最佳位置（固定）</small><strong id="optLoc">0</strong></div></div><div class="stat" style="margin-top:12px;border:1px solid #f9cd42"><small>操作過程遇過的最低 f(x)（即時）</small><strong id="seenBest" style="color:#f9cd42">—</strong><div id="seenLoc" style="font-size:17px;color:#cad5e9;margin-top:6px"></div></div><div class="control"><label for="dimension">論文維度</label><select id="dimension"><option value="10">10D</option><option value="20">20D</option><option value="30">30D</option></select><span id="mcn" class="badge">MCN 500</span></div><div class="control"><label for="detailRange">觀察視野</label><input type="range" id="detailRange" min="0" max="100" value="35"><span id="rangeText" class="value">—</span></div><div class="control"><label for="x1">x₁</label><input type="range" id="x1" min="-5" max="5" step="0.01" value="2"><span id="x1v" class="value">2.00</span></div><div class="control"><label for="x2">x₂</label><input type="range" id="x2" min="-5" max="5" step="0.01" value="1"><span id="x2v" class="value">1.00</span></div><div class="control"><button class="toggle" id="locate">標示全域最小點</button><button class="toggle" id="animate">▶ 自動探索</button><button class="toggle" id="pause">暫停</button></div><div class="panel" style="margin-top:16px"><h2>10D／20D／30D 怎麼呈現？</h2><div class="legend">這些是論文的<strong>問題維度</strong>。上面的 3D 地形畫的是 <strong>x₁、x₂ 與函數值 f</strong>；其他 D−2 個變數固定在指定值，以便看函數切片。切換 D 時會重新計算 D 維目標函數與 MCN，而不是假裝能完整畫出 30 維空間。</div><p class="legend" id="fixedNote" style="font-size:22px;font-weight:700;color:#ffe09b;line-height:1.6"></p></div><p class="footer">地形可縮放觀察；搜尋軌跡與論文統計結果分別呈現。</p></div></div></main><section id="experiment">
+<h2>ABC 搜尋與論文結果</h2>
+<p class="exp-note">左側顯示 ABC 搜尋曲線；右側顯示論文 Table 1 的 Mean 與 SD。</p>
+<div class="exp-row"><label for="expFunc">函數</label><select id="expFunc"><option value="griewank">Griewank</option><option value="rastrigin" selected>Rastrigin</option><option value="rosenbrock">Rosenbrock</option><option value="ackley">Ackley</option><option value="schwefel">Schwefel</option></select><label for="expD">維度</label><select id="expD"><option>10</option><option>20</option><option>30</option></select><button id="compareLauncher" type="button">📊 放大比較：GA / PSO / PS-EA / ABC1 / ABC2</button><button class="primary" id="expRun">▶ 執行 ABC</button><button id="expPause">⏸ 暫停</button><button id="expRestart">重新初始化</button></div>
+<div class="exp-grid"><div class="exp-card">
+<h2 style="font-size:27px">ABC 搜尋收斂曲線</h2><canvas class="exp-chart" id="expCurve" width="1050" height="540"></canvas>
+<div class="exp-metrics"><div>已執行循環 / MCN<strong id="expCycle">0 / 500</strong></div><div>目前找到的歷史最佳 f<strong id="expBest">—</strong></div><div>Food Sources<strong id="expSources">62</strong></div><div>Scout 重啟次數<strong id="expScouts">0</strong></div></div>
+<p class="exp-note" id="expStatus">按「執行 ABC」開始。可暫停與重新初始化。</p></div>
+<div class="exp-card"><h2 style="font-size:27px">論文原始結果（Table 1）</h2>
+<table><thead><tr><th>演算法</th><th>Mean</th><th>SD</th></tr></thead><tbody id="expPaperRows"></tbody></table>
+<p class="exp-note">比較數值是 30 次執行的 Mean 與 SD；ABC2 使用兩倍 MCN，不能視為相同計算預算的公平比較。</p>
+<p class="exp-note">論文設定：族群規模 125；10／20／30 維的 MCN 分別為 500／750／1000；30 次不同隨機種子取平均。</p>
+<p class="exp-note" id="expSetupNote">即時搜尋：62 個 Food Sources、62 隻 Onlooker Bees；limit = 62 × D（教學模擬設定）。右方 Table 1 數據為論文原始結果，兩者不可視為同一實驗。</p>
+</div></div></section><script>
+(()=>{'use strict';
+const $=s=>document.getElementById(s);const cfg={griewank:{name:'Griewank',bound:600,opt:0,description:'多峰結構，包含乘積餘弦項，因此不同變數會透過目標函數相互影響。可比較局部起伏與全域最小值。',detail:38},rastrigin:{name:'Rastrigin',bound:15,opt:0,description:'多峰函數：有許多局部最小值，容易讓搜尋停在不是全域最小值的谷底。',detail:5.12},rosenbrock:{name:'Rosenbrock',bound:15,opt:1,description:'狹長彎曲谷底：不容易沿著狹窄谷地收斂，測試搜尋的精細調整能力。',detail:3},ackley:{name:'Ackley',bound:32.768,opt:0,description:'周圍有許多小起伏，中心附近有明顯深谷。可觀察多峰結構和中心全域最小點。',detail:5},schwefel:{name:'Schwefel',bound:500,opt:420.968746,description:'多峰，而且全域最小點在距離原點很遠、接近搜尋邊界的位置；適合展示局部谷底與遠端最佳解。',detail:500}};
+let fkey='rastrigin', D=10, half=5.12,angle=.75,pitch=.56,zoom=1,showOpt=true,spinTimer=null,exploreTimer=null,baseExtra=0,score=0,observedBest=Infinity,observedAt=null;
+function obj(v){let d=v.length;switch(fkey){case'griewank':return 1+v.reduce((s,x)=>s+x*x/4000,0)-v.reduce((p,x,i)=>p*Math.cos(x/Math.sqrt(i+1)),1);case'rastrigin':return 10*d+v.reduce((s,x)=>s+x*x-10*Math.cos(2*Math.PI*x),0);case'rosenbrock':return v.slice(0,-1).reduce((s,x,i)=>s+100*Math.pow(v[i+1]-x*x,2)+Math.pow(x-1,2),0);case'ackley':return -20*Math.exp(-.2*Math.sqrt(v.reduce((s,x)=>s+x*x,0)/d))-Math.exp(v.reduce((s,x)=>s+Math.cos(2*Math.PI*x),0)/d)+20+Math.E;case'schwefel':return 418.9829*d-v.reduce((s,x)=>s+x*Math.sin(Math.sqrt(Math.abs(x))),0)}}
+function vector(x,y){const opt=cfg[fkey].opt;return [x,y,...Array(D-2).fill(opt)]}function curr(){return [+$('x1').value,+$('x2').value]}function sample(x,y){return obj(vector(x,y))}
+const surf=$('surface'),sc=surf.getContext('2d'),heat=$('heat'),hc=heat.getContext('2d'),prof=$('profile'),pc=prof.getContext('2d');
+function setRange(v){const c=cfg[fkey];const t=v/100;half=Math.min(c.bound,Math.max(.7,c.detail*Math.exp((t-.35)*2.8)));$('rangeText').textContent='±'+half.toFixed(2);['x1','x2'].forEach(id=>{$(id).min=-c.bound;$(id).max=c.bound;$(id).value=Math.max(-c.bound,Math.min(c.bound,+$(id).value))})}
+function ranges(){let mn=Infinity,mx=-Infinity;const values=[];for(let i=0;i<=44;i++){values[i]=[];for(let j=0;j<=44;j++){let x=-half+2*half*i/44,y=-half+2*half*j/44;let v=sample(x,y);values[i][j]=v;mn=Math.min(mn,v);mx=Math.max(mx,v)}}return{values,mn,mx}}
+function color(v){let t=Math.pow(Math.max(0,Math.min(1,v)),.7);return `rgb(${Math.round(21+212*t)},${Math.round(164-89*t)},${Math.round(177-155*t)})`}
+function draw(){const {values,mn,mx}=ranges();score=sample(...curr());if(score<observedBest){observedBest=score;observedAt=curr().slice()}$('seenBest').textContent=observedBest.toFixed(4);$('seenLoc').textContent=observedAt?'紀錄位置 x₁='+observedAt[0].toFixed(2)+'，x₂='+observedAt[1].toFixed(2):'';$('nowVal').textContent=score.toFixed(4);$('x1v').textContent=(+ $('x1').value).toFixed(2);$('x2v').textContent=(+ $('x2').value).toFixed(2);
+// Heat map
+const hw=heat.width,hh=heat.height,left=50,top=18,w=hw-80,h=hh-58;hc.fillStyle='#0d1423';hc.fillRect(0,0,hw,hh);for(let i=0;i<44;i++)for(let j=0;j<44;j++){let v=values[i][j];hc.fillStyle=color((v-mn)/(mx-mn||1));hc.fillRect(left+i*w/44,top+(43-j)*h/44,w/44+1,h/44+1)}hc.strokeStyle='#fff';hc.lineWidth=2;hc.strokeRect(left,top,w,h);hc.fillStyle='#e8eaf1';hc.font='18px system-ui';hc.fillText('x₁ →',left+w-55,hh-8);hc.fillText('x₂ ↑',4,21);hc.fillText((-half).toFixed(1),left,hh-10);hc.fillText(half.toFixed(1),left+w-40,hh-10);
+const px=x=>left+(x+half)/(2*half)*w,py=y=>top+(half-y)/(2*half)*h;
+if(showOpt){let a=cfg[fkey].opt;if(Math.abs(a)<=half){hc.strokeStyle='#a4ff9c';hc.lineWidth=4;hc.beginPath();hc.arc(px(a),py(a),10,0,7);hc.stroke()}}
+let [x,y]=curr();if(Math.abs(x)<=half&&Math.abs(y)<=half){hc.fillStyle='#ffd24d';hc.beginPath();hc.arc(px(x),py(y),10,0,7);hc.fill();hc.strokeStyle='#111';hc.stroke()}
+// 3D surface: painter-sorted colored quads with orbital camera
+sc.fillStyle='#0b1321';sc.fillRect(0,0,surf.width,surf.height);const W=surf.width,H=surf.height;const av=(mx-mn)||1;let scale=165*zoom;function projection(x,y,z){let X=x/half,Y=y/half,Z=((z-mn)/av-.5)*1.45;let cx=Math.cos(angle),sx=Math.sin(angle),cp=Math.cos(pitch),sp=Math.sin(pitch);let xx=X*cx-Y*sx,yy=X*sx+Y*cx;return [W/2+xx*scale,H*.54+(yy*sp-Z*cp)*scale,yy*cp+Z*sp]}
+let quads=[];for(let i=0;i<44;i++)for(let j=0;j<44;j++){let x0=-half+2*half*i/44,x1=-half+2*half*(i+1)/44,y0=-half+2*half*j/44,y1=-half+2*half*(j+1)/44;let p=[projection(x0,y0,values[i][j]),projection(x1,y0,values[i+1][j]),projection(x1,y1,values[i+1][j+1]),projection(x0,y1,values[i][j+1])];quads.push({p,depth:p.reduce((s,a)=>s+a[2],0)/4,val:(values[i][j]+values[i+1][j]+values[i+1][j+1]+values[i][j+1])/4})}quads.sort((a,b)=>b.depth-a.depth);for(let q of quads){sc.beginPath();sc.moveTo(q.p[0][0],q.p[0][1]);for(let k=1;k<4;k++)sc.lineTo(q.p[k][0],q.p[k][1]);sc.closePath();sc.fillStyle=color((q.val-mn)/av);sc.fill();sc.strokeStyle='rgba(7,18,26,.22)';sc.lineWidth=.6;sc.stroke()}
+if(showOpt&&Math.abs(cfg[fkey].opt)<=half){let q=projection(cfg[fkey].opt,cfg[fkey].opt,sample(cfg[fkey].opt,cfg[fkey].opt));sc.lineWidth=4;sc.strokeStyle='#a4ff9c';sc.beginPath();sc.arc(q[0],q[1],13,0,7);sc.stroke()}
+if(Math.abs(x)<=half&&Math.abs(y)<=half){let q=projection(x,y,score);sc.fillStyle='#ffd24d';sc.strokeStyle='#fff';sc.lineWidth=2;sc.beginPath();sc.arc(q[0],q[1],11,0,7);sc.fill();sc.stroke()}
+sc.fillStyle='#fff';sc.font='bold 27px system-ui';sc.fillText('x₁ / x₂ / f(x)',26,44);sc.fillStyle='#c4cddd';sc.font='20px system-ui';sc.fillText('高低：即時目標函數值；視野 ±'+half.toFixed(2),26,76);
+// 1D cross section at current y
+pc.fillStyle='#0c1526';pc.fillRect(0,0,prof.width,prof.height);const N=240;let vals=[];let low=Infinity,high=-Infinity;for(let i=0;i<=N;i++){let val=sample(-half+2*half*i/N,y);vals.push(val);low=Math.min(low,val);high=Math.max(high,val)}const h2=prof.height;pc.strokeStyle='#3a4c68';pc.lineWidth=2;pc.strokeRect(46,28,prof.width-78,h2-76);pc.beginPath();vals.forEach((val,i)=>{let qx=46+i/N*(prof.width-78),qy=28+(1-(val-low)/((high-low)||1))*(h2-76);if(i===0)pc.moveTo(qx,qy);else pc.lineTo(qx,qy)});pc.strokeStyle='#75c0ec';pc.lineWidth=4;pc.stroke();if(Math.abs(x)<=half){let p=(x+half)/(2*half),qx=46+p*(prof.width-78),qy=28+(1-(score-low)/((high-low)||1))*(h2-76);pc.fillStyle='#ffd24d';pc.beginPath();pc.arc(qx,qy,10,0,7);pc.fill()}
+pc.fillStyle='#e5ecf7';pc.font='19px system-ui';pc.fillText('固定 x₂ = '+y.toFixed(2),56,22);pc.fillText('x₁ →',prof.width-90,h2-10)}
+function changeFunc(key){fkey=key;observedBest=Infinity;observedAt=null;const c=cfg[key];document.querySelectorAll('[data-f]').forEach(b=>b.classList.toggle('active',b.dataset.f===key));$('landTitle').textContent=c.name+'｜3D 函數地形';$('explain').textContent=c.description;$('minVal').textContent='0';$('bounds').textContent=`[${-c.bound}, ${c.bound}]`;$('optLoc').textContent=c.opt.toFixed(3);$('detailRange').value=35;setRange(35);$('x1').value=Math.min(c.bound,c.opt+c.detail*.25);$('x2').value=Math.max(-c.bound,c.opt-c.detail*.17);angle=.75;pitch=.56;zoom=1;$('fixedNote').textContent=`目前 ${D} 維：3D 圖的水平軸是 x₁、x₂，高度是 f(x)；第 3～${D} 維（共 ${D-2} 維）固定為 ${c.opt.toFixed(3)}。此為函數切片，不是搜尋軌跡。`;draw()}
+document.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{stop();changeFunc(b.dataset.f)});$('dimension').onchange=()=>{D=+$('dimension').value;observedBest=Infinity;observedAt=null;$('mcn').textContent='MCN '+({10:500,20:750,30:1000}[D]);$('fixedNote').textContent=`目前 ${D} 維：3D 圖的水平軸是 x₁、x₂，高度是 f(x)；第 3～${D} 維（共 ${D-2} 維）固定為 ${cfg[fkey].opt.toFixed(3)}。此為函數切片，不是搜尋軌跡。`;draw()};$('detailRange').oninput=()=>{setRange(+$('detailRange').value);draw()};$('x1').oninput=draw;$('x2').oninput=draw;$('locate').onclick=()=>{showOpt=!showOpt;draw()};$('resetCam').onclick=()=>{angle=.75;pitch=.56;zoom=1;draw()};let drag=null;surf.onpointerdown=e=>{drag=[e.clientX,e.clientY];surf.setPointerCapture(e.pointerId)};surf.onpointermove=e=>{if(!drag)return;angle+=(e.clientX-drag[0])*.009;pitch=Math.max(.07,Math.min(1.35,pitch+(e.clientY-drag[1])*.006));drag=[e.clientX,e.clientY];draw()};surf.onpointerup=()=>drag=null;surf.onpointercancel=()=>drag=null;surf.onwheel=e=>{e.preventDefault();zoom=Math.max(.45,Math.min(2,zoom*(e.deltaY>0?.92:1.08)));draw()};
+function stop(){if(spinTimer)clearInterval(spinTimer);if(exploreTimer)clearInterval(exploreTimer);spinTimer=exploreTimer=null;$('spin').textContent='▶ 自動旋轉';$('animate').textContent='▶ 自動探索'}$('pause').onclick=stop;$('spin').onclick=()=>{if(spinTimer){stop();return}stop();spinTimer=setInterval(()=>{angle+=.015;draw()},90);$('spin').textContent='■ 停止旋轉'};$('animate').onclick=()=>{if(exploreTimer){stop();return}stop();let theta=0;exploreTimer=setInterval(()=>{theta+=.08;const c=cfg[fkey];$('x1').value=(c.opt+Math.sin(theta)*Math.min(half*.7,c.bound*.4)).toFixed(2);$('x2').value=(c.opt+Math.cos(theta*.75)*Math.min(half*.55,c.bound*.4)).toFixed(2);draw()},140);$('animate').textContent='■ 停止探索'};
+changeFunc('rastrigin');})();
+</script><script>
+(()=>{
+'use strict';
+const paperData={"griewank": {"10": ["0.050228", "0.029523", "0.079393", "0.033451", "0.222366", "0.0781", "0.00087", "0.002535", "0.000329", "0.0018"], "20": ["1.0139", "0.026966", "0.030565", "0.025419", "0.59036", "0.2030", "2.01E-08", "6.76E-08", "0", "0"], "30": ["1.2342", "0.11045", "0.011151", "0.014209", "0.8211", "0.1394", "2.87E-09", "8.45E-10", "0", "0"]}, "rastrigin": {"10": ["1.3928", "0.76319", "2.6559", "1.3896", "0.43404", "0.2551", "0", "0", "0", "0"], "20": ["6.0309", "1.4537", "12.059", "3.3216", "1.8135", "0.2551", "1.45E-08", "5.06E-08", "0", "0"], "30": ["10.4388", "2.6386", "32.476", "6.9521", "3.0527", "0.9985", "0.033874", "0.181557", "0", "0"]}, "rosenbrock": {"10": ["46.3184", "33.8217", "4.3713", "2.3811", "25.303", "29.7964", "0.034072", "0.045553", "0.012522", "0.01263"], "20": ["103.93", "29.505", "77.382", "94.901", "72.452", "27.3441", "0.13614", "0.132013", "0.014458", "0.010933"], "30": ["166.283", "59.5102", "402.54", "633.65", "98.407", "35.5791", "0.219626", "0.152742", "0.020121", "0.021846"]}, "ackley": {"10": ["0.59267", "0.22482", "9.8499E-13", "9.6202E-13", "0.19209", "0.1951", "7.8E-11", "1.16E-09", "4.6E-11", "5.4E-11"], "20": ["0.92413", "0.22599", "1.1778E-6", "1.5842E-6", "0.32321", "0.097353", "1.6E-11", "1.9E-11", "0", "1E-12"], "30": ["1.0989", "0.24956", "1.4917E-6", "1.8612E-6", "0.3771", "0.098762", "3E-12", "5E-12", "0", "0"]}, "schwefel": {"10": ["1.9519", "1.3044", "161.87", "144.16", "0.32037", "1.6185", "1.27E-09", "4E-12", "1.27E-09", "4E-12"], "20": ["7.285", "2.9971", "543.07", "360.22", "1.4984", "0.84612", "19.83971", "45.12342", "0.000255", "4E-12"], "30": ["13.5346", "4.9534", "990.77", "581.14", "3.272", "1.6185", "146.8568", "82.3144", "0.000382", "1E-12"]}};
+const get=id=>document.getElementById(id);
+const bounds={griewank:600,rastrigin:15,rosenbrock:15,ackley:32.768,schwefel:500};
+const MCN={10:500,20:750,30:1000},SN=62;
+let sim=null,timer=null;
+const rand=(a,b)=>a+(b-a)*Math.random();
+const clip=(v,b)=>Math.max(-b,Math.min(b,v));
+const val=(name,v)=>{
+ let d=v.length;
+ if(name==='griewank')return 1+v.reduce((s,x)=>s+x*x/4000,0)-v.reduce((p,x,i)=>p*Math.cos(x/Math.sqrt(i+1)),1);
+ if(name==='rastrigin')return 10*d+v.reduce((s,x)=>s+x*x-10*Math.cos(2*Math.PI*x),0);
+ if(name==='rosenbrock')return v.slice(0,-1).reduce((s,x,i)=>s+100*(v[i+1]-x*x)**2+(1-x)**2,0);
+ if(name==='ackley')return -20*Math.exp(-.2*Math.sqrt(v.reduce((s,x)=>s+x*x,0)/d))-Math.exp(v.reduce((s,x)=>s+Math.cos(2*Math.PI*x),0)/d)+20+Math.E;
+ return 418.9829*d-v.reduce((s,x)=>s+x*Math.sin(Math.sqrt(Math.abs(x))),0);
+};
+const fmt=n=>Number(n).toPrecision(5);
+function stop(){if(timer!==null)clearInterval(timer);timer=null;get('expRun').textContent='▶ 繼續執行'}
+function updateTable(){
+ const a=paperData[get('expFunc').value][get('expD').value],names=['GA','PSO','PS-EA','ABC1','ABC2'];
+ get('expPaperRows').innerHTML=names.map((name,i)=>`<tr><td>${name}</td><td>${a[i*2]}</td><td>${a[i*2+1]}</td></tr>`).join('');
+}
+function init(){stop();const name=get('expFunc').value,D=+get('expD').value,b=bounds[name];
+ const pop=Array.from({length:SN},()=>Array.from({length:D},()=>rand(-b,b)));
+ const scores=pop.map(v=>val(name,v)),best=Math.min(...scores);
+ sim={name,D,b,pop,scores,trials:Array(SN).fill(0),best,cycle:0,mcn:MCN[D],scouts:0,history:[best],limit:SN*D};
+ get('expRun').textContent='▶ 執行 ABC';
+ get('expSources').textContent=SN;
+ get('expStatus').textContent=`已初始化 ${SN} 個 Food Sources；函數 ${name}；邊界 ±${b}。`;
+ updateTable();render();
+}
+function attempt(i){
+ const {pop,scores,trials,D,b,name}=sim;
+ let k=i;while(k===i)k=Math.floor(Math.random()*SN);
+ const j=Math.floor(Math.random()*D),phi=rand(-1,1),candidate=pop[i].slice();
+ candidate[j]=clip(candidate[j]+phi*(candidate[j]-pop[k][j]),b);
+ const f=val(name,candidate);
+ if(f<=scores[i]){pop[i]=candidate;scores[i]=f;trials[i]=0;if(f<sim.best)sim.best=f;}
+ else trials[i]++;
+}
+function cycle(){
+ if(!sim||sim.cycle>=sim.mcn)return false;
+ for(let i=0;i<SN;i++)attempt(i);
+ const weights=sim.scores.map(f=>f>=0?1/(1+f):1+Math.abs(f));
+ const sum=weights.reduce((a,b)=>a+b,0);
+ for(let q=0;q<SN;q++){
+  let r=Math.random()*sum,i=SN-1;
+  for(let t=0;t<SN;t++){r-=weights[t];if(r<=0){i=t;break}}
+  attempt(i);
+ }
+ const bad=sim.trials.findIndex(t=>t>=sim.limit);
+ if(bad>=0){sim.pop[bad]=Array.from({length:sim.D},()=>rand(-sim.b,sim.b));sim.scores[bad]=val(sim.name,sim.pop[bad]);sim.trials[bad]=0;sim.scouts++;sim.best=Math.min(sim.best,sim.scores[bad]);}
+ sim.cycle++;sim.history.push(sim.best);return true;
+}
+function render(){if(!sim)return;
+ get('expCycle').textContent=`${sim.cycle} / ${sim.mcn}`;get('expBest').textContent=fmt(sim.best);get('expScouts').textContent=sim.scouts;
+ const cv=get('expCurve'),c=cv.getContext('2d'),W=cv.width,H=cv.height;
+ c.clearRect(0,0,W,H);c.fillStyle='#0b1323';c.fillRect(0,0,W,H);
+ const L=105,R=W-40,T=45,B=H-74;
+ c.strokeStyle='#566983';c.lineWidth=2;c.strokeRect(L,T,R-L,B-T);
+ const ys=sim.history.map(v=>Math.log10(Math.max(v,1e-14)));
+ const hi=Math.max(0,...ys),lo=Math.min(-2,...ys),span=Math.max(1,hi-lo);
+ c.fillStyle='#dce6f9';c.font='21px sans-serif';
+ for(let z=0;z<=4;z++){
+  const exp=hi-z*span/4,y=T+(B-T)*z/4;
+  c.fillText(`10^${exp.toFixed(1)}`,10,y+6);c.strokeStyle='rgba(255,255,255,.12)';c.beginPath();c.moveTo(L,y);c.lineTo(R,y);c.stroke();
+ }
+ c.strokeStyle='#f9cd42';c.lineWidth=4;c.beginPath();
+ ys.forEach((v,i)=>{const x=L+i/sim.mcn*(R-L),y=T+(hi-v)/span*(B-T);if(!i)c.moveTo(x,y);else c.lineTo(x,y)});c.stroke();
+ c.fillStyle='#dce6f9';c.font='24px sans-serif';c.fillText('0',L-4,B+37);c.fillText(`MCN = ${sim.mcn}`,R-145,B+37);
+ c.fillText('單次模擬：歷史最佳 f（對數刻度）',L,T-14);
+}
+get('expRun').onclick=()=>{
+ if(timer!==null){stop();return;}
+ if(sim.cycle>=sim.mcn)init();
+ get('expRun').textContent='■ 播放中（點擊暫停）';get('expStatus').textContent='ABC 依新解公式、Greedy Selection、Onlooker 選擇與 Scout 重啟逐循環搜尋…';
+ timer=setInterval(()=>{
+  for(let t=0;t<5;t++)if(!cycle())break;
+  render();
+  if(sim.cycle>=sim.mcn){stop();get('expRun').textContent='▶ 再執行一次';get('expStatus').textContent='本次搜尋完成。這是單次隨機模擬；右欄是論文獨立的 30 次統計數據。';}
+ },70);
+};
+get('expPause').onclick=stop;
+get('expRestart').onclick=init;
+get('expFunc').onchange=init;get('expD').onchange=init;
+init();
+})();
+</script>
+<div id="compareOverlay" aria-label="論文結果比較放大展示">
+ <div class="cpTop"><div><h2>論文原始結果｜五種演算法比較</h2><div class="cpTitleNote">切換函數與維度，觀察 30 次獨立實驗的 Mean；數值越小越好。資料來源：論文 Table 1。</div></div><button id="compareClose" type="button">✕ 返回函數視覺化</button></div>
+ <div class="cpBtns" id="compareFuncs">
+  <button data-cpf="griewank">Griewank</button><button data-cpf="rastrigin">Rastrigin</button><button data-cpf="rosenbrock">Rosenbrock</button><button data-cpf="ackley">Ackley</button><button data-cpf="schwefel">Schwefel ★ ABC2</button>
+ </div>
+ <div class="cpBtns" id="compareDims"><button data-cpd="10">10 維</button><button data-cpd="20">20 維</button><button data-cpd="30">30 維</button></div>
+ <div class="cpGrid"><div class="cpCard"><h3 id="cpChartTitle">論文平均最佳函數值（Mean）</h3><canvas id="cpChart" width="1100" height="670"></canvas><div class="cpFoot">縱軸為對數量尺；論文中為 0 的結果會以「0」標在量尺底部，避免和極小正數混淆。</div></div>
+ <div class="cpCard"><h3>論文 Table 1｜Mean ± SD</h3><table><thead><tr><th>演算法</th><th>Mean</th><th>SD</th></tr></thead><tbody id="cpRows"></tbody></table><div id="cpInterpret"></div><div class="cpFoot">ABC1：原始 MCN；ABC2：MCN 加倍。10／20／30 維的 ABC1 MCN = 500／750／1000，ABC2 = 1000／1500／2000。兩者並非相同搜尋預算。</div></div></div>
+</div>
+<script type="application/json" id="paperDataJSON">{"griewank": {"10": ["0.050228", "0.029523", "0.079393", "0.033451", "0.222366", "0.0781", "0.00087", "0.002535", "0.000329", "0.0018"], "20": ["1.0139", "0.026966", "0.030565", "0.025419", "0.59036", "0.2030", "2.01E-08", "6.76E-08", "0", "0"], "30": ["1.2342", "0.11045", "0.011151", "0.014209", "0.8211", "0.1394", "2.87E-09", "8.45E-10", "0", "0"]}, "rastrigin": {"10": ["1.3928", "0.76319", "2.6559", "1.3896", "0.43404", "0.2551", "0", "0", "0", "0"], "20": ["6.0309", "1.4537", "12.059", "3.3216", "1.8135", "0.2551", "1.45E-08", "5.06E-08", "0", "0"], "30": ["10.4388", "2.6386", "32.476", "6.9521", "3.0527", "0.9985", "0.033874", "0.181557", "0", "0"]}, "rosenbrock": {"10": ["46.3184", "33.8217", "4.3713", "2.3811", "25.303", "29.7964", "0.034072", "0.045553", "0.012522", "0.01263"], "20": ["103.93", "29.505", "77.382", "94.901", "72.452", "27.3441", "0.13614", "0.132013", "0.014458", "0.010933"], "30": ["166.283", "59.5102", "402.54", "633.65", "98.407", "35.5791", "0.219626", "0.152742", "0.020121", "0.021846"]}, "ackley": {"10": ["0.59267", "0.22482", "9.8499E-13", "9.6202E-13", "0.19209", "0.1951", "7.8E-11", "1.16E-09", "4.6E-11", "5.4E-11"], "20": ["0.92413", "0.22599", "1.1778E-6", "1.5842E-6", "0.32321", "0.097353", "1.6E-11", "1.9E-11", "0", "1E-12"], "30": ["1.0989", "0.24956", "1.4917E-6", "1.8612E-6", "0.3771", "0.098762", "3E-12", "5E-12", "0", "0"]}, "schwefel": {"10": ["1.9519", "1.3044", "161.87", "144.16", "0.32037", "1.6185", "1.27E-09", "4E-12", "1.27E-09", "4E-12"], "20": ["7.285", "2.9971", "543.07", "360.22", "1.4984", "0.84612", "19.83971", "45.12342", "0.000255", "4E-12"], "30": ["13.5346", "4.9534", "990.77", "581.14", "3.272", "1.6185", "146.8568", "82.3144", "0.000382", "1E-12"]}}</script><script>
+(()=>{'use strict';
+ const allData=JSON.parse(document.getElementById('paperDataJSON').textContent);
+ const fNames={griewank:'Griewank',rastrigin:'Rastrigin',rosenbrock:'Rosenbrock',ackley:'Ackley',schwefel:'Schwefel'};
+ const names=['GA','PSO','PS-EA','ABC1','ABC2'];
+ let f='schwefel',d='30';
+ const $=id=>document.getElementById(id),overlay=$('compareOverlay');
+ const fnBtns=[...document.querySelectorAll('[data-cpf]')],dimBtns=[...document.querySelectorAll('[data-cpd]')];
+ function show(){overlay.classList.add('visible');document.body.style.overflow='hidden';render()}
+ function hide(){overlay.classList.remove('visible');document.body.style.overflow=''}
+ $('compareLauncher').addEventListener('click',show);$('compareClose').addEventListener('click',hide);
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&overlay.classList.contains('visible'))hide()});
+ fnBtns.forEach(b=>b.addEventListener('click',()=>{f=b.dataset.cpf;render()}));
+ dimBtns.forEach(b=>b.addEventListener('click',()=>{d=b.dataset.cpd;render()}));
+ function render(){
+  fnBtns.forEach(b=>b.classList.toggle('cpActive',b.dataset.cpf===f));dimBtns.forEach(b=>b.classList.toggle('cpActive',b.dataset.cpd===d));
+  $('cpChartTitle').textContent=`${fNames[f]}｜${d} 維｜平均最佳函數值`;
+  const raw=allData[f][d],mean=names.map((_,i)=>Number(raw[2*i]));
+  $('cpRows').innerHTML=names.map((n,i)=>`<tr class="${n==='ABC2'?'cpABC2':''}"><td>${n}${n==='ABC2'?' ★':''}</td><td>${raw[2*i]}</td><td>${raw[2*i+1]}</td></tr>`).join('');
+  const mcn=({10:500,20:750,30:1000})[d];
+  $('cpInterpret').innerHTML=f==='schwefel'&&Number(d)>=20?
+    `<b>Schwefel ${d}D 是論文的重要比較：</b>ABC1 Mean = <b>${raw[6]}</b>，增加 MCN 後 ABC2 = <b>${raw[8]}</b>。但 ABC2 使用 <b>${mcn*2}</b> 次循環，其他演算法與 ABC1 使用 ${mcn} 的設定，不能當成相同搜尋預算的公平勝負。`:
+    `目前 ${fNames[f]} ${d}D：可以直接比較 GA、PSO、PS-EA、ABC1、ABC2 的 Mean 與 SD。ABC2 使用 ${mcn*2} 次循環，ABC1 使用 ${mcn} 次。`;
+  plot(mean,raw);
+ }
+ function plot(mean,raw){
+  const c=$('cpChart').getContext('2d'),W=1100,H=670;c.clearRect(0,0,W,H);c.fillStyle='#0b1526';c.fillRect(0,0,W,H);
+  const left=145,right=1055,top=80,bottom=540;
+  const pos=mean.filter(v=>v>0);const minPos=Math.min(...pos),maxPos=Math.max(...pos,1e-12);
+  const lo=Math.floor(Math.log10(minPos))-0.5,hi=Math.ceil(Math.log10(maxPos))+0.5;
+  const safeSpan=Math.max(1,hi-lo);const mapY=v=>bottom-(Math.log10(Math.max(v,10**lo))-lo)/safeSpan*(bottom-top);
+  c.font='22px sans-serif';c.fillStyle='#e2e8f5';
+  for(let i=0;i<=6;i++){let exp=lo+i*safeSpan/6,y=bottom-(i/6)*(bottom-top);c.strokeStyle='rgba(255,255,255,.13)';c.lineWidth=1;c.beginPath();c.moveTo(left,y);c.lineTo(right,y);c.stroke();c.fillStyle='#bfcbe0';c.fillText('10^'+exp.toFixed(1),22,y+7)}
+  const colors=['#8aa2c5','#73b7ff','#b39bf0','#f9cd42','#70d69b'];
+  mean.forEach((v,i)=>{let cx=225+i*174,bw=88,y=v===0?bottom:mapY(v);c.fillStyle=colors[i];
+    if(v>0){c.fillRect(cx-bw/2,y,bw,Math.max(3,bottom-y));}else{c.strokeStyle=colors[i];c.lineWidth=5;c.beginPath();c.moveTo(cx-25,bottom-5);c.lineTo(cx+25,bottom-5);c.stroke();c.fillStyle='#e7edf9';c.font='18px sans-serif';c.textAlign='center';c.fillText('理論/表列 0',cx,bottom-20)}
+    c.textAlign='center';c.font='bold 25px sans-serif';c.fillStyle='#ffffff';c.fillText(v===0?'0':raw[i*2],cx,Math.max(top+5,y-(v===0?50:15)));c.font='bold 27px sans-serif';c.fillStyle=colors[i];c.fillText(names[i],cx,bottom+43);
+  });c.textAlign='left';c.fillStyle='#d9e2f4';c.font='23px sans-serif';c.fillText('Mean（對數刻度；越低越好；0 以底線表示）',left,38);
+ }
+})();
+</script></body></html>
