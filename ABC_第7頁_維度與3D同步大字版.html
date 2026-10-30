@@ -1,0 +1,222 @@
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ABC 新解產生｜3D 互動視覺化</title><style>
+:root{color-scheme:dark;--bg:#080e19;--panel:#121b2b;--line:#33425c;--ink:#f4f7ff;--muted:#bac6db;--gold:#f9cd42;--green:#71d7a0;--blue:#78b9fd;--red:#ff817d}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% 0,#1a2844,#080e19 55%);font-family:system-ui,"Microsoft JhengHei",sans-serif;color:var(--ink)}header{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:15px 24px;border-bottom:1px solid var(--line)}h1{margin:0;font-size:clamp(27px,3vw,42px);color:var(--gold)}h2{font-size:25px;margin:0 0 12px;color:var(--gold)}p{font-size:19px;line-height:1.5}main{max-width:1700px;margin:auto;padding:18px 22px}.muted{color:var(--muted)}.tabs{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}button,select{font:inherit;font-size:20px;padding:12px 17px;border:1px solid #586a88;background:#25344d;border-radius:12px;color:white;cursor:pointer}button:hover{border-color:var(--gold)}button.active,button.primary{background:var(--gold);color:#1b2535;font-weight:800;border-color:var(--gold)}button:disabled{opacity:.5;cursor:default}.panel{border:1px solid var(--line);background:rgba(18,27,43,.96);padding:19px;border-radius:19px}.mode{display:none}.mode.active{display:block}.layout{display:grid;grid-template-columns:minmax(580px,1.55fr) minmax(380px,1fr);gap:18px}.visual{position:relative}.visual canvas{display:block;width:100%;height:min(65vh,640px);min-height:450px;background:radial-gradient(circle,#16253b,#0a1221);border-radius:15px;cursor:grab;touch-action:none}.visual canvas:active{cursor:grabbing}.hint{font-size:17px;color:var(--muted);margin-top:9px}.ctrl{display:grid;grid-template-columns:120px 1fr 95px;gap:12px;align-items:center;margin:15px 0;font-size:22px}.ctrl input{width:100%;accent-color:var(--gold)}.value{font-size:23px;text-align:right;font-variant-numeric:tabular-nums}.formula{font-size:clamp(24px,2.6vw,37px);text-align:center;padding:13px;margin:13px 0;border-radius:14px;background:#202d43;font-weight:700}.answer{font-size:22px;line-height:1.6;padding:13px;background:#1d2b41;border-radius:13px}.answer b{color:var(--gold)}.statrow{display:grid;grid-template-columns:1fr 1fr;gap:12px}.stat{padding:14px;background:#1b2b43;border-radius:13px}.stat strong{font-size:32px;display:block;margin-top:4px;font-variant-numeric:tabular-nums}.stat span{font-size:17px;color:var(--muted)}.vectors{font-size:20px;line-height:1.9;word-break:break-word}.vectors mark{background:var(--gold);color:#17233a;padding:2px 5px;border-radius:5px;font-weight:800}.buttons{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.good{color:var(--green)}.bad{color:var(--red)}.info{font-size:18px;color:var(--muted);line-height:1.5}.footer{margin-top:16px;font-size:17px;color:var(--muted)}@media(max-width:1100px){.layout{grid-template-columns:1fr}.visual canvas{height:500px}.ctrl{grid-template-columns:100px 1fr 85px}}@media(max-width:600px){header{padding:12px}main{padding:12px}.panel{padding:12px}.visual canvas{height:410px;min-height:360px}.ctrl{font-size:18px}.value{font-size:18px}}
+
+.terrainGrid{display:grid;grid-template-columns:minmax(540px,1.35fr) minmax(400px,1fr);gap:18px}
+.terrainCanvas{display:block;width:100%;height:auto;background:#080e19;border-radius:16px;border:1px solid var(--line)}
+#terrain .biglabel{font-size:24px;font-weight:800;color:var(--gold);margin-bottom:10px}
+#terrain .terrainInfo{font-size:23px;line-height:1.65}
+#terrain .status{padding:15px;background:#1d2b41;border-radius:13px;margin:12px 0;min-height:86px}
+@media(max-width:1100px){.terrainGrid{grid-template-columns:1fr}}
+</style><style>
+.liveNumbers{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0}
+.liveNumbers>div{background:#243450;border:1px solid #556781;border-radius:13px;padding:13px 16px}
+.liveNumbers span{display:block;font-size:19px;color:#cad6eb;margin-bottom:4px}
+.liveNumbers strong{display:block;font-size:clamp(28px,2.5vw,39px);color:#ffdb66;font-variant-numeric:tabular-nums}
+#singlePlayState{color:#74dfac}
+
+/* 單次更新：同步顯示所有維度，投影標示與大字差值 */
+.dimStrip{margin-top:16px;background:#111d31;border:1px solid #415576;border-radius:18px;padding:18px}
+.dimStrip h2{margin-bottom:8px}
+.dimSub{font-size:20px;color:#c6d2e6;margin:8px 0 14px}
+.dimCount{font-size:24px;font-weight:800;color:#f9cd42}
+.dimGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.dimCell{border:1px solid #435573;background:#1b2a40;border-radius:12px;padding:10px 12px;min-width:0}
+.dimCell.isActive{border:3px solid #f9cd42;background:#483c21;box-shadow:0 0 15px #f9cd4233}
+.dimCell .dimLabel{font-size:19px;color:#c5d0e2}
+.dimCell .dimValue{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}
+.dimCell.isActive .dimValue{color:#ffe180}
+.dimCell .dimDelta{font-size:17px;color:#71d7a0}
+.dimCell .dimUnchanged{font-size:16px;color:#a8b7d0}
+#singleAxesNote{font-size:22px;line-height:1.5;padding:12px 16px;border-radius:12px;background:#233450;margin:8px 0}
+#singleChangeNote{font-size:24px;font-weight:800;color:#f9cd42;margin:10px 0}
+</style></head><body><header><h1>ABC｜新解產生的 3D 視覺化</h1><span class="muted">簡報第 7 頁｜獨立展示工具</span></header><main>
+<div class="tabs"><button id="tabSingle" class="active" type="button">① 單次更新：理解公式</button><button id="tabSearch" type="button">② 連續搜尋：觀察 3D 軌跡</button><button id="tabTerrain" type="button">③ Rastrigin 多峰地形</button></div>
+<section class="mode active" id="single"><div class="layout"><div class="panel visual"><h2>3D 空間與新解移動</h2><canvas id="canvasSingle" width="1050" height="680"></canvas><div class="hint">拖曳旋轉視角 · 滾輪縮放 · 藍色 Xₖ、綠色 Xᵢ、黃色 Vᵢ · 虛線是 Xᵢ → Vᵢ 的移動</div></div><div class="panel"><h2>公式控制</h2><div class="formula">vᵢⱼ = xᵢⱼ + <span style="color:var(--gold)">φᵢⱼ</span>(xᵢⱼ − xₖⱼ)</div><div class="ctrl"><label for="singleD">維度 D</label><select id="singleD"><option value="2">2D</option><option value="3" selected>3D</option><option value="10">10D</option><option value="20">20D</option><option value="30">30D</option></select><span></span></div><div class="ctrl"><label for="singleJ">更新維度 j</label><input type="range" id="singleJ" min="1" max="3" step="1" value="1"><span id="singleJval" class="value">1</span></div><div class="ctrl"><label for="singleXi">xᵢⱼ</label><input type="range" id="singleXi" min="-8" max="8" step="0.1" value="5"><span id="singleXival" class="value">5.0</span></div><div class="ctrl"><label for="singleXk">xₖⱼ</label><input type="range" id="singleXk" min="-8" max="8" step="0.1" value="3"><span id="singleXkval" class="value">3.0</span></div><div class="ctrl"><label for="singlePhi">φᵢⱼ</label><input type="range" id="singlePhi" min="-1" max="1" step="0.001" value="0.5"><span id="singlePhival" class="value">0.50</span></div><div class="buttons"><button data-phi="-1">φ = −1</button><button data-phi="0">φ = 0</button><button data-phi="1">φ = 1</button><button id="singleReset">還原</button><button id="singleAuto" class="primary" type="button">▶ 自動演示</button><button id="singlePause" type="button">⏸ 暫停</button></div><p class="info">自動演示會讓 φ 在 −1 到 1 之間來回變化，黃色新解會跟著移動；這是同一個新解公式的參數展示，不是完整 ABC 搜尋循環。</p><div class="liveNumbers" aria-live="off">
+<div><span>播放狀態</span><strong id="singlePlayState">已暫停</strong></div>
+<div><span>目前 φᵢⱼ</span><strong id="livePhi">+0.500</strong></div>
+<div><span>新解 vᵢⱼ</span><strong id="liveV">6.000</strong></div>
+<div><span>移動距離 Δ</span><strong id="liveDelta">+1.000</strong></div>
+</div>
+<div class="answer" id="singleResult"></div><details style="margin-top:14px"><summary style="font-size:21px;cursor:pointer">展開 Before／After 向量</summary><div id="singleVectors" class="vectors"></div></details><p class="info">每次只更新一個選定維度；3D 圖只顯示最多三個座標的投影，高維其他座標會在下方完整列出。</p></div></div>
+<div class="dimStrip">
+<h2>完整 D 維向量｜調整維度或 φ，下方同步變化</h2>
+<div class="dimSub"><span id="singleDimCount" class="dimCount">3D</span> · 黃色表示這次更新的維度；每格依序顯示「原始值 → 候選值」。</div>
+<div id="singleAxesNote">目前 3D 投影維度：第 1、2、3 維</div>
+<div id="singleChangeNote">第 1 維正在更新</div>
+<div id="singleDimGrid" class="dimGrid"></div>
+</div></section>
+<section class="mode" id="search"><div class="layout"><div class="panel visual"><h2>ABC 搜尋路徑（動態）</h2><canvas id="canvasSearch" width="1050" height="680"></canvas><div class="hint">拖曳旋轉 · 滾輪縮放 · 黃色是追蹤的 Food Source · 亮綠線為接受的更新軌跡 · 紅色叉號為被拒絕的候選解</div></div><div class="panel"><h2>控制連續搜尋</h2><div class="ctrl"><label for="searchD">維度 D</label><select id="searchD"><option value="2">2D</option><option value="3" selected>3D</option><option value="10">10D</option><option value="20">20D</option><option value="30">30D</option></select><span></span></div><div class="ctrl"><label for="searchTrack">追蹤 Food Source</label><select id="searchTrack"></select><span></span></div>
+<div class="ctrl"><label for="searchAxes">3D 投影維度</label><select id="searchAxes"></select><span></span></div>
+<div class="buttons"><button id="trackOnly" type="button">只看追蹤來源：關</button><button id="autoAxes" type="button">自動跟隨更新維度：開</button></div>
+<div class="info" id="axisInfo">3D 圖只顯示所選的三個維度。</div>
+<div class="ctrl"><label for="searchSpeed">速度</label><input id="searchSpeed" type="range" min="1" max="8" value="3"><span id="speedVal" class="value">3</span></div><div class="buttons"><button class="primary" id="stepBtn">單步搜尋</button><button id="playBtn">▶ 自動播放</button><button id="pauseBtn">暫停</button><button id="resetBtn">重新初始化</button></div><div class="statrow"><div class="stat"><span>已嘗試次數</span><strong id="attempts">0</strong></div><div class="stat"><span>歷史最佳函數值</span><strong id="best">-</strong></div><div class="stat"><span>接受次數</span><strong id="accepted">0</strong></div><div class="stat"><span>Scout 次數</span><strong id="scouts">0</strong></div></div><div class="answer" id="trackInfo" style="margin-top:14px">追蹤來源：#1</div><div class="answer" id="searchEvent" style="margin-top:14px">按「單步搜尋」觀察更新。</div><p class="info">使用 Rastrigin 最小化函數作為教學地形，搜尋範圍 [−5.12, 5.12]。每次候選解只更改一個隨機選取的維度；經 Greedy Selection 接受後，來源才真正移動。這是採用 12 個 Food Sources、limit = 12 的原理示範，<b>不是論文原始實驗的參數或逐代紀錄</b>。</p></div></div></section>
+
+<section class="mode" id="terrain"><div class="terrainGrid">
+ <div class="panel"><h2>Rastrigin 多峰地形｜俯視圖</h2><canvas id="terrain2d" class="terrainCanvas" width="1080" height="780" style="cursor:crosshair;touch-action:none"></canvas><div class="hint">亮黃點：追蹤的 Food Source｜綠點：歷史最佳｜白色軌跡：成功更新｜紅線：被拒絕的新解。點擊地圖可重新設定追蹤來源。</div></div>
+ <div class="panel"><h2>Rastrigin 函數｜3D 高低起伏</h2><canvas id="terrain3d" class="terrainCanvas" width="820" height="410"></canvas><div class="hint">橫向座標是 x₁、x₂；高度是目標函數值 f。波浪狀的凹谷代表局部最小值。這是 2 個決策變數的函數地形。</div>
+ <div class="biglabel" style="margin-top:18px">看見 ABC 如何搜尋不同谷底</div>
+ <div class="buttons"><button class="primary" id="terrainStep">單步更新</button><button id="terrainPlay">▶ 自動播放</button><button id="terrainPause">暫停</button><button id="terrainReset">重新初始化</button><button id="terrainScout">教學示範：強制 Scout</button></div>
+ <div class="statrow"><div class="stat"><span>搜尋嘗試</span><strong id="terrainAttempts">0</strong></div><div class="stat"><span>歷史最佳 f</span><strong id="terrainBest">—</strong></div></div>
+ <div class="status terrainInfo" id="terrainEvent">點「單步更新」，觀察一個候選解如何產生，再由 Greedy Selection 決定是否移動。</div>
+ <div class="info">「強制 Scout」不需達到 limit，僅用於展示重新探索；一般自動搜尋則需 trial ≥ 12。這是依 ABC 新解公式建立的<strong>教學模擬</strong>，不是論文原始實驗軌跡。為清楚顯示多峰結構，這裡的地形顯示範圍為 [−5.12,5.12]²；論文正式 Rastrigin 實驗的搜尋界限與族群設定請以原文表格為準。</div>
+ </div>
+</div></section>
+<div class="footer">視覺化目的：讓你在 PPT 解釋公式時，一鍵開啟互動頁面。兩種模式均可離線使用，不需額外套件。</div></main><script>
+'use strict';
+const $=id=>document.getElementById(id), clamp=(x,a,b)=>Math.min(b,Math.max(a,x)),rand=(a,b)=>a+Math.random()*(b-a), fmt=(x,n=3)=>Number(x).toFixed(n);
+let active='single'; function show(name){if(name!=='single'&&typeof pauseSingle==='function')pauseSingle();active=name; $('single').classList.toggle('active',name==='single');$('search').classList.toggle('active',name==='search');$('tabSingle').classList.toggle('active',name==='single');$('tabSearch').classList.toggle('active',name==='search');$('tabTerrain').classList.toggle('active',name==='terrain');$('terrain').classList.toggle('active',name==='terrain');render();}
+$('tabSingle').onclick=()=>show('single');$('tabSearch').onclick=()=>show('search');$('tabTerrain').onclick=()=>show('terrain');
+// Perspective 3D projection with mouse rotation and zoom; canvas uses no external libraries.
+const camera={single:{yaw:-0.6,pitch:0.4,zoom:1.0},search:{yaw:-0.6,pitch:0.4,zoom:1.0}};
+function setupCamera(canvas,name){let drag=null;canvas.addEventListener('pointerdown',e=>{drag=[e.clientX,e.clientY];canvas.setPointerCapture(e.pointerId)});canvas.addEventListener('pointermove',e=>{if(!drag)return;camera[name].yaw+=(e.clientX-drag[0])*.009;camera[name].pitch=clamp(camera[name].pitch+(e.clientY-drag[1])*.007,-1.4,1.4);drag=[e.clientX,e.clientY];render()});canvas.addEventListener('pointerup',()=>drag=null);canvas.addEventListener('pointercancel',()=>drag=null);canvas.addEventListener('wheel',e=>{e.preventDefault();camera[name].zoom=clamp(camera[name].zoom*(e.deltaY>0?.9:1.1),.4,2.1);render()},{passive:false})}
+setupCamera($('canvasSingle'),'single');setupCamera($('canvasSearch'),'search');
+function plot(canvas,name,items,range){const ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height;ctx.clearRect(0,0,w,h);let cam=camera[name],sz=22*cam.zoom;const center=[w*.51,h*.54];function project(p){let [x,y,z]=p.map(v=>v/range);const cy=Math.cos(cam.yaw),sy=Math.sin(cam.yaw),cp=Math.cos(cam.pitch),sp=Math.sin(cam.pitch);let xr=x*cy-z*sy,zr=x*sy+z*cy;let yr=y*cp-zr*sp;let depth=y*sp+zr*cp;let sc=sz*8/(1+depth*.16);return [center[0]+xr*sc,center[1]-yr*sc]}
+function line(a,b,color='#607491',width=1,dash=[]){const A=project(a),B=project(b);ctx.setLineDash(dash);ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(...A);ctx.lineTo(...B);ctx.stroke();ctx.setLineDash([])}
+const d=range;for(let k=-1;k<=1;k+=.5){line([-d,k*d,-d],[d,k*d,-d],'#243755');line([k*d,-d,-d],[k*d,d,-d],'#243755')}line([0,0,0],[d,0,0],'#e16e6e',3);line([0,0,0],[0,d,0],'#70d69d',3);line([0,0,0],[0,0,d],'#7ea8ee',3);
+[['X',[d,0,0]],['Y',[0,d,0]],['Z',[0,0,d]]].forEach(([l,p])=>{const q=project(p);ctx.fillStyle='#e6edf8';ctx.font='bold 25px system-ui';ctx.fillText(l,q[0]+6,q[1]-8)});
+items.lines.forEach(x=>line(x.a,x.b,x.color,x.width||3,x.dash||[]));items.points.forEach(x=>{const q=project(x.p);ctx.fillStyle=x.color;ctx.beginPath();ctx.arc(q[0],q[1],x.radius||11,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#f4f7ff';ctx.lineWidth=1.5;ctx.stroke();if(x.label){ctx.fillStyle=x.color;ctx.font='bold 23px system-ui';ctx.fillText(x.label,q[0]+15,q[1]-14)}})}
+const baseI=[5,3,-2,2,-1,1,3,-3,2,0],baseK=[3,-3,3,-2,2,-1,1,2,-2,3];function grow(arr,D){return Array.from({length:D},(_,i)=>arr[i%arr.length])};
+function selectedAxes(j,D){const arr=[j];for(let k=0;k<D && arr.length<Math.min(3,D);k++)if(!arr.includes(k))arr.push(k);while(arr.length<3)arr.push(-1);return arr;}
+function projectDims(vec,axes){return axes.map(k=>k<0?0:vec[k])}
+function singleState(){let D=+$('singleD').value,j=+$('singleJ').value-1,x=+$('singleXi').value,k=+$('singleXk').value,phi=+$('singlePhi').value;let xi=grow(baseI,D),xk=grow(baseK,D);xi[j]=x;xk[j]=k;let raw=x+phi*(x-k),v=xi.slice();v[j]=raw;return {D,j,xi,xk,v,phi,raw,axes:selectedAxes(j,D)}}
+function updateSingle(){let D=+$('singleD').value;$('singleJ').max=D;if(+$('singleJ').value>D)$('singleJ').value=D;let s=singleState();$('singleJval').textContent=s.j+1;$('singleXival').textContent=fmt(s.xi[s.j],1);$('singleXkval').textContent=fmt(s.xk[s.j],1);$('singlePhival').textContent=fmt(s.phi,2);
+let change=s.raw-s.xi[s.j];
+$('livePhi').textContent=(s.phi>=0?'+':'')+s.phi.toFixed(3);
+$('liveV').textContent=s.raw.toFixed(3);
+$('liveDelta').textContent=(change>=0?'+':'')+change.toFixed(3);$('singleResult').innerHTML=`vᵢⱼ = ${fmt(s.xi[s.j],1)} + (${fmt(s.phi,2)}) × (${fmt(s.xi[s.j],1)} − ${fmt(s.xk[s.j],1)}) = <b>${fmt(s.raw)}</b><br>第 <b>${s.j+1}</b> 維移動：<b>${change>=0?'正方向':'負方向'} ${fmt(Math.abs(change))}</b>；其餘 ${s.D-1} 維不變。`;
+const vec=v=>'('+v.map((x,i)=>i===s.j?`<mark>${fmt(x,2)}</mark>`:fmt(x,2)).join('，')+')';$('singleVectors').innerHTML=`<b>原本 Xᵢ</b><br>${vec(s.xi)}<br><b>候選 Vᵢ</b><br>${vec(s.v)}`;
+$('singleDimCount').textContent=s.D+'D（共 '+s.D+' 個座標）';
+$('singleAxesNote').textContent='3D 投影顯示：'+s.axes.filter(a=>a>=0).map((a,n)=>'第 '+(a+1)+' 維 → '+['X','Y','Z'][n]+' 軸').join('、')+'。其餘維度仍參與候選解，但不在這張 3D 圖中顯示。';
+$('singleChangeNote').textContent='目前更新第 '+(s.j+1)+' 維：'+s.xi[s.j].toFixed(3)+' → '+s.v[s.j].toFixed(3)+'（位移 '+(change>=0?'+':'')+change.toFixed(3)+'）';
+$('singleDimGrid').innerHTML=s.xi.map((original,i)=>{
+ const chosen=i===s.j, next=s.v[i],diff=next-original;
+ return '<div class="dimCell'+(chosen?' isActive':'')+'"><div class="dimLabel">第 '+(i+1)+' 維'+(chosen?' ★ 更新':'')+'</div><div class="dimValue">'+original.toFixed(2)+' → '+next.toFixed(3)+'</div><div class="'+(chosen?'dimDelta':'dimUnchanged')+'">'+(chosen?'位移 '+(diff>=0?'+':'')+diff.toFixed(3):'不變')+'</div></div>';
+}).join('');
+
+plot($('canvasSingle'),'single',{points:[{p:projectDims(s.xi,s.axes),color:'#71d7a0',label:'Xᵢ'},{p:projectDims(s.xk,s.axes),color:'#78b9fd',label:'Xₖ'},{p:projectDims(s.v,s.axes),color:'#f9cd42',label:'Vᵢ'}],lines:[{a:projectDims(s.xi,s.axes),b:projectDims(s.v,s.axes),color:'#f9cd42',width:5,dash:[9,7]}]},10);
+}
+let singleAnimation=null;let singleDir=1;let singlePhiExact=null;
+function pauseSingle(){
+  if(singleAnimation!==null){clearInterval(singleAnimation);singleAnimation=null;}
+  singlePhiExact=null;
+  $('singleAuto').textContent='▶ 自動演示';
+  const state=document.getElementById('singlePlayState');
+  if(state)state.textContent='已暫停';
+}
+function animateSingle(){
+  if(singleAnimation!==null)return;
+  singlePhiExact=Number($('singlePhi').value);
+  $('singleAuto').textContent='■ 停止演示';
+  document.getElementById('singlePlayState').textContent='● 播放中';
+  let last=performance.now();
+  // A standalone timer, not tied to the canvas renderer or manual-input events.
+  singleAnimation=setInterval(()=>{
+    const now=performance.now();
+    const dt=Math.min((now-last)/1000,.12); last=now;
+    singlePhiExact+=singleDir*dt*0.75;
+    if(singlePhiExact>=1){singlePhiExact=1;singleDir=-1;}
+    else if(singlePhiExact<=-1){singlePhiExact=-1;singleDir=1;}
+    $('singlePhi').value=singlePhiExact.toFixed(3);
+    updateSingle();
+  },40);
+  updateSingle();
+}
+$('singleAuto').addEventListener('click',()=>{if(singleAnimation===null)animateSingle();else pauseSingle()});
+$('singlePause').addEventListener('click',pauseSingle);
+for(let id of ['singleD','singleJ','singleXi','singleXk','singlePhi'])$(id).addEventListener('input',()=>{if(singleAnimation!==null)pauseSingle();updateSingle()});document.querySelectorAll('[data-phi]').forEach(b=>b.onclick=()=>{$('singlePhi').value=b.dataset.phi;updateSingle()});$('singleReset').onclick=()=>{pauseSingle();$('singleD').value=3;$('singleJ').value=1;$('singleXi').value=5;$('singleXk').value=3;$('singlePhi').value=.5;updateSingle()};
+// Real coordinate-wise ABC-inspired optimization loop with greedy acceptance.
+const search={pop:[],trial:[],track:0,attempts:0,accepted:0,scouts:0,best:Infinity,bestPos:[],line:[],last:null,D:3,stage:0};
+let trackedOnly=false,autoProjection=true,scoutTrace=null;
+function projectionAxes(){
+  const d=search.D, a=Number($('searchAxes').value||0);
+  return [a,(a+1)%d,d>=3?(a+2)%d:-1];
+}
+function refreshProjection(){
+ const sel=$('searchAxes'), old=sel.value;
+ sel.innerHTML='';
+ for(let i=0;i<search.D;i++){const op=document.createElement('option');op.value=i;op.textContent=`第 ${i+1}、${(i+1)%search.D+1}${search.D>=3?'、'+((i+2)%search.D+1):''} 維`;sel.appendChild(op)}
+ sel.value=Number(old)<search.D && old!==''?old:0;
+ $('axisInfo').textContent=`顯示第 ${projectionAxes().filter(i=>i>=0).map(i=>i+1).join('、')} 維；其餘維度的更新不一定會在 3D 位置中顯示。`;
+}
+$('searchAxes').addEventListener('change',()=>{autoProjection=false;$('autoAxes').textContent='自動跟隨更新維度：關';refreshProjection();renderSearch()});
+$('searchTrack').addEventListener('change',()=>{search.track=+$('searchTrack').value;search.line=[search.pop[search.track].slice()];scoutTrace=null;renderSearch()});
+$('trackOnly').addEventListener('click',()=>{trackedOnly=!trackedOnly;$('trackOnly').textContent='只看追蹤來源：'+(trackedOnly?'開':'關');});
+$('autoAxes').addEventListener('click',()=>{autoProjection=!autoProjection;$('autoAxes').textContent='自動跟隨更新維度：'+(autoProjection?'開':'關');});
+function obj(v){return 10*v.length+v.reduce((s,x)=>s+x*x-10*Math.cos(2*Math.PI*x),0)}
+const rn=()=>Array.from({length:search.D},()=>rand(-5.12,5.12));
+function initSearch(){stop();search.D=+$('searchD').value;search.pop=Array.from({length:12},rn);search.trial=Array(12).fill(0);search.track=0;search.attempts=search.accepted=search.scouts=search.stage=0;search.best=Infinity;search.bestPos=[];search.line=[search.pop[0].slice()];search.last=null;scoutTrace=null;$('searchTrack').innerHTML=search.pop.map((_,i)=>`<option value="${i}">Food Source #${i+1}</option>`).join('');refreshProjection();for(const p of search.pop){if(obj(p)<search.best){search.best=obj(p);search.bestPos=p.slice()}}$('searchEvent').innerHTML='已初始化 12 個 Food Sources。按「單步搜尋」觀察候選解。';$('trackInfo').textContent='追蹤 Food Source #1｜trial = 0 / limit = 12';updateStats();render()}
+function weightPick(){const f=search.pop.map(x=>1/(1+Math.max(0,obj(x)))),sum=f.reduce((a,b)=>a+b,0);let r=Math.random()*sum;for(let i=0;i<f.length;i++){r-=f[i];if(r<=0)return i}return f.length-1}
+function stepSearch(){let n=search.pop.length;const isOnlooker=search.stage>=n;let i=isOnlooker?weightPick():search.stage,k;do{k=Math.floor(Math.random()*n)}while(k===i);const j=Math.floor(Math.random()*search.D),phi=rand(-1,1),old=search.pop[i].slice(),v=old.slice(),raw=old[j]+phi*(old[j]-search.pop[k][j]);v[j]=clamp(raw,-5.12,5.12);let accepted=obj(v)<=obj(old);if(accepted){search.pop[i]=v;search.trial[i]=0;search.accepted++;}else search.trial[i]++;search.attempts++;let tag=isOnlooker?'Onlooker':'Employed',scoutInfo='';if(accepted&&i===search.track){search.line.push(v.slice());if(search.line.length>80)search.line.shift();}search.last={i,k,j,old,v,accepted};
+ if(autoProjection && search.D>=3 && i===search.track){$('searchAxes').value=j;refreshProjection()}
+if(obj(search.pop[i])<search.best){search.best=obj(search.pop[i]);search.bestPos=search.pop[i].slice()}
+search.stage++;if(search.stage>=2*n){search.stage=0;let bad=search.trial.findIndex(t=>t>=12);if(bad>=0){const oldTrackScout=search.pop[bad].slice();search.pop[bad]=rn();search.trial[bad]=0;search.scouts++;scoutInfo=`；Scout 重新初始化來源 #${bad+1}`;if(bad===search.track){scoutTrace={old:oldTrackScout,newPos:search.pop[bad].slice()};search.line=[search.pop[bad].slice()];}if(obj(search.pop[bad])<search.best){search.best=obj(search.pop[bad]);search.bestPos=search.pop[bad].slice()}}}
+$('searchEvent').innerHTML=`<b>${tag} Bee</b> 更新來源 #${i+1}，選擇 j=${j+1}、φ=${fmt(phi,2)}。<br>候選解 ${accepted?'<span class="good">較佳，接受</span>':'<span class="bad">未改善，拒絕</span>'}；f(舊)=${fmt(obj(old))}，f(新)=${fmt(obj(v))}${scoutInfo}。`;$('trackInfo').innerHTML=`<b>追蹤 Food Source #${search.track+1}</b>｜本次更新 #${i+1}${i===search.track?'（正在追蹤）':'（其他來源）'}｜trial = ${search.trial[search.track]} / limit = 12${scoutInfo?'｜'+scoutInfo:''}`;
+updateStats();render()}
+function stepTracked(){
+ if(!trackedOnly){stepSearch();return}
+ // 讓未追蹤來源照常參與演算法，只略過它們的逐步畫面
+ for(let z=0;z<400;z++){
+   const prev=search.attempts, prevScouts=search.scouts;
+   stepSearch();
+   if(search.last?.i===search.track || search.scouts>prevScouts)break;
+   if(search.attempts===prev)break;
+ }
+}
+function updateStats(){$('attempts').textContent=search.attempts;$('accepted').textContent=search.accepted;$('scouts').textContent=search.scouts;$('best').textContent=fmt(search.best)}
+function renderSearch(){if(!search.pop.length)return;const ax=projectionAxes(),points=search.pop.map((v,i)=>({p:projectDims(v,ax),color:i===search.track?'#f9cd42':'#7395be',radius:i===search.track?15:8,label:i===search.track?'追蹤來源':''}));points.push({p:projectDims(search.bestPos,ax),color:'#71d7a0',radius:12,label:'歷史最佳'});const lines=[];for(let q=1;q<search.line.length;q++)lines.push({a:projectDims(search.line[q-1],ax),b:projectDims(search.line[q],ax),color:'#71d7a0',width:4});if(search.last){let {old,v,accepted,i}=search.last;lines.push({a:projectDims(old,ax),b:projectDims(v,ax),color:accepted?'#f9cd42':'#ff817d',width:3,dash:[8,7]});points.push({p:projectDims(v,ax),color:accepted?'#f9cd42':'#ff817d',radius:9,label:accepted?'接受的新解':'拒絕的候選解'})}if(scoutTrace){lines.push({a:projectDims(scoutTrace.old,ax),b:projectDims(scoutTrace.newPos,ax),color:'#ffbc40',width:4,dash:[14,8]});points.push({p:projectDims(scoutTrace.old,ax),color:'#ff7d7d',label:'Scout 放棄的舊位置'})}
+plot($('canvasSearch'),'search',{points,lines},5.12)}
+let timer=null;function stop(){if(timer){clearInterval(timer);timer=null}$('playBtn').textContent='▶ 自動播放'}$('stepBtn').onclick=stepTracked;$('resetBtn').onclick=initSearch;$('pauseBtn').onclick=stop;$('playBtn').onclick=()=>{if(timer){stop();return}timer=setInterval(stepTracked,750/+$('searchSpeed').value);$('playBtn').textContent='播放中…'};$('searchD').onchange=initSearch;$('searchSpeed').oninput=()=>{$('speedVal').textContent=$('searchSpeed').value;if(timer){stop();$('playBtn').click()}};
+function render(){if(active==='single')updateSingle();else if(active==='search')renderSearch();else renderTerrain()};initSearch();updateSingle();
+
+// The Rastrigin landscape demonstration is separate from paper Table 1 results.
+const terr={pop:[],trials:[],best:Infinity,bestPoint:null,tracked:0,history:[],last:null,attempts:0,scouts:0,phase:0};
+const terrBound=5.12;
+const ras2=([x,y])=>20+x*x-10*Math.cos(2*Math.PI*x)+y*y-10*Math.cos(2*Math.PI*y);
+function initTerrain(){terrStop();terr.pop=Array.from({length:12},()=>[rand(-terrBound,terrBound),rand(-terrBound,terrBound)]);terr.trials=Array(12).fill(0);terr.best=Infinity;terr.bestPoint=null;terr.tracked=0;terr.history=[terr.pop[0].slice()];terr.last=null;terr.attempts=0;terr.scouts=0;terr.phase=0;terr.pop.forEach(p=>updateTerrBest(p));$('terrainEvent').textContent='已初始化 12 個 Food Sources。按「單步更新」，觀察多峰地形中的搜尋。';renderTerrain()}
+function updateTerrBest(p){const v=ras2(p);if(v<terr.best){terr.best=v;terr.bestPoint=p.slice()}}
+function terrStep(){let i=terr.phase%terr.pop.length,k;const onlooker=terr.phase%24>=12;if(onlooker){const weights=terr.pop.map(v=>1/(1+Math.max(0,ras2(v)))),sum=weights.reduce((a,b)=>a+b,0);let r=rand(0,sum);for(let q=0;q<weights.length;q++){r-=weights[q];if(r<=0){i=q;break}}}do{k=Math.floor(Math.random()*terr.pop.length)}while(k===i);
+ const j=Math.floor(Math.random()*2),phi=rand(-1,1),old=terr.pop[i].slice(),v=old.slice();v[j]=clamp(v[j]+phi*(v[j]-terr.pop[k][j]),-terrBound,terrBound);
+ const oldf=ras2(old),newf=ras2(v),accepted=newf<=oldf;terr.trials[i]=accepted?0:terr.trials[i]+1;
+ if(accepted){terr.pop[i]=v;updateTerrBest(v);if(i===terr.tracked){terr.history.push(v.slice());if(terr.history.length>70)terr.history.shift()}}
+ terr.last={i,old,v,accepted,j,phi};terr.attempts++;terr.phase++;let msg=`${onlooker?'Onlooker':'Employed'} Bee：來源 #${i+1}，j=${j+1}，φ=${phi.toFixed(2)}。f：${oldf.toFixed(2)} → ${newf.toFixed(2)}；${accepted?'新解較佳，接受':'新解未改善，拒絕'}。`;
+ if(terr.phase%24===0){const bad=terr.trials.findIndex(t=>t>=12);if(bad>=0){terr.scouts++;terr.pop[bad]=[rand(-terrBound,terrBound),rand(-terrBound,terrBound)];terr.trials[bad]=0;updateTerrBest(terr.pop[bad]);if(bad===terr.tracked)terr.history=[terr.pop[bad].slice()];msg+=' Scout 放棄停滯來源，重新搜尋。'}}
+ $('terrainEvent').textContent=msg;renderTerrain()}
+function terrScout(){const i=terr.tracked,old=terr.pop[i].slice();terr.pop[i]=[rand(-terrBound,terrBound),rand(-terrBound,terrBound)];terr.trials[i]=0;terr.scouts++;terr.history=[terr.pop[i].slice()];terr.last={i,old,v:terr.pop[i].slice(),accepted:true,scout:true};updateTerrBest(terr.pop[i]);$('terrainEvent').textContent='Scout 機制示意：直接將追蹤來源重新隨機初始化，幫助觀察它如何跳到另一個谷底附近。此按鈕是教學觸發，不代表原演算法已達 limit。';renderTerrain()}
+const heatCanvas=document.createElement('canvas');heatCanvas.width=650;heatCanvas.height=650;
+function buildHeat(){const c=heatCanvas.getContext('2d'),n=650,img=c.createImageData(n,n);for(let y=0;y<n;y++)for(let x=0;x<n;x++){
+ const a=-terrBound+(x+.5)/n*2*terrBound,b=terrBound-(y+.5)/n*2*terrBound,v=ras2([a,b]),t=Math.min(1,v/83),idx=(y*n+x)*4;
+ img.data[idx]=Math.round(15+210*t);img.data[idx+1]=Math.round(65+90*(1-t));img.data[idx+2]=Math.round(142-120*t);img.data[idx+3]=255;
+ }c.putImageData(img,0,0)}buildHeat();
+function renderTerrain(){if(!terr.pop.length)return;const cv=$('terrain2d'),c=cv.getContext('2d'),s=680,ox=185,oy=45;
+ c.clearRect(0,0,cv.width,cv.height);c.fillStyle='#08111e';c.fillRect(0,0,cv.width,cv.height);c.drawImage(heatCanvas,ox,oy,s,s);
+ c.strokeStyle='#f3eed9';c.lineWidth=3;c.strokeRect(ox,oy,s,s);
+ function map(p){return [ox+(p[0]+terrBound)/(terrBound*2)*s,oy+(terrBound-p[1])/(terrBound*2)*s]}
+ c.fillStyle='#ebf3ff';c.font='24px system-ui';c.fillText('多峰地形：顏色越偏藍綠，函數值越低',35,30);
+ c.fillText('x₁ →',ox+s-70,oy+s+38);c.fillText('x₂ ↑',ox-90,oy+30);
+ for(let n=-4;n<=4;n+=2){const v=map([n,-terrBound]);c.fillText(String(n),v[0]-12,oy+s+30)}
+ for(let i=1;i<terr.history.length;i++){let a=map(terr.history[i-1]),b=map(terr.history[i]);c.strokeStyle='#f4f8ff';c.lineWidth=4;c.beginPath();c.moveTo(...a);c.lineTo(...b);c.stroke()}
+ if(terr.last){let a=map(terr.last.old),b=map(terr.last.v);c.strokeStyle=terr.last.accepted?'#ffd24d':'#ff7777';c.setLineDash([12,8]);c.lineWidth=4;c.beginPath();c.moveTo(...a);c.lineTo(...b);c.stroke();c.setLineDash([]);if(!terr.last.accepted){c.strokeStyle='#ff7777';c.lineWidth=4;c.beginPath();c.moveTo(b[0]-10,b[1]-10);c.lineTo(b[0]+10,b[1]+10);c.moveTo(b[0]+10,b[1]-10);c.lineTo(b[0]-10,b[1]+10);c.stroke()}}
+ terr.pop.forEach((p,i)=>{let a=map(p);c.beginPath();c.arc(...a,i===terr.tracked?13:8,0,Math.PI*2);c.fillStyle=i===terr.tracked?'#ffd24d':'#dae5fa';c.fill();c.strokeStyle='#18263d';c.lineWidth=2;c.stroke()});
+ if(terr.bestPoint){let a=map(terr.bestPoint);c.strokeStyle='#69ed9f';c.lineWidth=4;c.beginPath();c.arc(...a,18,0,Math.PI*2);c.stroke()}
+ $('terrainAttempts').textContent=terr.attempts;$('terrainBest').textContent=terr.best.toFixed(4);drawTerrain3D()}
+function drawTerrain3D(){const cv=$('terrain3d'),c=cv.getContext('2d'),W=cv.width,H=cv.height;c.fillStyle='#08111e';c.fillRect(0,0,W,H);
+ const project=(x,y,z)=>[W/2+(x-y)*34,H*.67+(x+y)*14-z*2.4];
+ // Painter-order cells, continuous 3D wireframe reveals local peaks and valleys.
+ const N=43,cells=[];
+ for(let i=0;i<N-1;i++)for(let j=0;j<N-1;j++){
+  const a=-5.12+i*10.24/(N-1),b=-5.12+j*10.24/(N-1),step=10.24/(N-1);
+  const v=[[a,b],[a+step,b],[a+step,b+step],[a,b+step]];
+  cells.push({depth:a+b,pts:v.map(p=>project(p[0],p[1],ras2(p))),val:ras2([a+step*.5,b+step*.5])});
+ }
+ cells.sort((a,b)=>a.depth-b.depth);
+ for(const cell of cells){const pts=cell.pts;c.beginPath();c.moveTo(...pts[0]);for(let i=1;i<4;i++)c.lineTo(...pts[i]);c.closePath();const t=Math.min(1,cell.val/80);c.fillStyle=`rgb(${Math.round(23+168*t)},${Math.round(168-80*t)},${Math.round(160-115*t)})`;c.fill();c.strokeStyle='rgba(8,18,31,.3)';c.lineWidth=.6;c.stroke()}
+ c.fillStyle='#e9f0ff';c.font='21px system-ui';c.fillText('x₁、x₂ 是座標；高度 = f(x₁,x₂)',20,30);c.fillText('凹下去的是局部谷底',20,H-24);
+ const p=terr.pop[terr.tracked],q=project(p[0],p[1],ras2(p));c.beginPath();c.arc(...q,10,0,Math.PI*2);c.fillStyle='#ffd24d';c.fill();c.strokeStyle='#ffffff';c.lineWidth=2;c.stroke()}
+$('terrainStep').onclick=terrStep;$('terrainReset').onclick=initTerrain;$('terrainScout').onclick=terrScout;
+let terrTimer=null;function terrStop(){if(terrTimer)clearInterval(terrTimer);terrTimer=null;$('terrainPlay').textContent='▶ 自動播放'}
+$('terrainPlay').onclick=()=>{if(terrTimer){terrStop();return}terrTimer=setInterval(terrStep,550);$('terrainPlay').textContent='播放中…'};$('terrainPause').onclick=terrStop;
+$('terrain2d').addEventListener('click',e=>{const r=e.target.getBoundingClientRect(),x=(e.clientX-r.left)*1080/r.width,y=(e.clientY-r.top)*780/r.height;if(x<185||x>865||y<45||y>725)return;const point=[(x-185)/680*10.24-5.12,5.12-(y-45)/680*10.24];
+ let best=Infinity,idx=0;terr.pop.forEach((p,i)=>{const d=Math.hypot(p[0]-point[0],p[1]-point[1]);if(d<best){best=d;idx=i}});terr.tracked=idx;terr.history=[terr.pop[idx].slice()];renderTerrain()});
+initTerrain();
+
+</script></body></html>
